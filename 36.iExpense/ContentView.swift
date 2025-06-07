@@ -5,25 +5,25 @@
 //  Created by Валентин on 07.06.2025.
 //
 
-import Observation
 import SwiftUI
 
-@Observable
-class User {
-    var firstName = "Valentin"
-    var secondName = "Kartoshkin"
+struct SecondView: View {
+    let name: String
+    var body: some View {
+        Text("Hello, \(name)!")
+    }
 }
 
 struct ContentView: View {
-    @State private var user = User()
+    @State private var showingSheet = false
+    
     var body: some View {
-        VStack {
-            Text("Your name is \(user.firstName) \(user.secondName)")
-            
-            TextField("First name", text: $user.firstName)
-            TextField("Second name", text: $user.secondName)
+        Button("Show Sheet") {
+            showingSheet.toggle()
         }
-        .padding()
+        .sheet(isPresented: $showingSheet) {
+            SecondView(name: "Valentin")
+        }
     }
 }
 
