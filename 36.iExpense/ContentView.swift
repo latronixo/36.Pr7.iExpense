@@ -5,9 +5,11 @@
 //  Created by Валентин on 07.06.2025.
 //
 
+import Observation
 import SwiftUI
 
-struct User {
+@Observable
+class User {
     var firstName = "Valentin"
     var secondName = "Kartoshkin"
 }
