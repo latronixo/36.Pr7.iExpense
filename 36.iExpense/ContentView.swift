@@ -18,21 +18,35 @@ struct ExpenseItem: Identifiable, Codable {
 class Expenses {
     var items = [ExpenseItem]() {
         didSet {
-            if let encoded = try? JSONEncoder().encode(items) {
-                UserDefaults.standard.set(encoded, forKey: "Items")
-            }
+            saveItems()
         }
     }
     
+    var personalItems: [ExpenseItem] {
+        items.filter { $0.type == "Personal" }
+    }
+    
+    var businessItems: [ExpenseItem] {
+        items.filter { $0.type == "Business" }
+    }
+    
     init() {
-        if let savedItems = UserDefaults.standard.data(forKey: "Items") {
-            if let decodedItems = try? JSONDecoder().decode([ExpenseItem].self, from: savedItems) {
-                items = decodedItems
-                return
-            }
+        loadItems()
+    }
+    
+    private func loadItems() {
+        if let savedItems = UserDefaults.standard.data(forKey: "Items"),
+           let decodedItems = try? JSONDecoder().decode([ExpenseItem].self, from: savedItems) {
+            items = decodedItems
+        } else {
+            items = []
         }
-        //если загрузить из UserDefaults не удалось, то пусть items будет пустым массивом
-        items = []
+    }
+    
+    private func saveItems() {
+        if let encoded = try? JSONEncoder().encode(items) {
+            UserDefaults.standard.set(encoded, forKey: "Items")
+        }
     }
 }
 
@@ -43,22 +57,25 @@ struct ContentView: View {
     var body: some View {
         NavigationStack {
             List {
-                ForEach(expenses.items, id: \.id) { item in
-                    HStack {
-                        VStack(alignment: .leading) {
-                            Text(item.name)
-                                .font(.headline)
-                            
-                            Text(item.type)
-                        }
-                        
-                        Spacer()
-                        
-                        Text(item.amount, format: .currency(code: Locale.current.currency?.identifier ?? "USD"))
+                // Секция личных расходов
+                Section("Personal Expenses") {
+                    ForEach(expenses.personalItems) { item in
+                        ExpenseRow(item: item)
                     }
-                    .background(item.amount <= 10 ? .yellow : item.amount <= 100 ? .green : .blue)
+                    .onDelete { offsets in
+                        removeItems(at: offsets, type: "Personal")
+                    }
                 }
-                .onDelete(perform: removeItems)
+                
+                // Секция деловых расходов
+                Section("Business Expenses") {
+                    ForEach(expenses.businessItems) { item in
+                        ExpenseRow(item: item)
+                    }
+                    .onDelete { offsets in
+                        removeItems(at: offsets, type: "Business")
+                    }
+                }
             }
             .navigationTitle("iExpense")
             .toolbar {
@@ -72,8 +89,34 @@ struct ContentView: View {
         }
     }
     
-    func removeItems(at offsets: IndexSet) {
-        expenses.items.remove(atOffsets: offsets)
+    func removeItems(at offsets: IndexSet, type: String) {
+        let itemsToDelete = type == "Personal" ? expenses.personalItems : expenses.businessItems
+        let idsToDelete = offsets.map { itemsToDelete[$0].id }
+        expenses.items.removeAll { idsToDelete.contains($0.id) }
+    }
+}
+
+struct ExpenseRow: View {
+    let item: ExpenseItem
+    
+    var amountColor: Color {
+        switch item.amount {
+        case ...10: return .yellow
+        case ...100: return .green
+        default: return .blue
+        }
+    }
+    
+    var body: some View {
+        HStack {
+            Text(item.name)
+                .font(.headline)
+            
+            Spacer()
+            
+        Text(item.amount, format: .currency(code: Locale.current.currency?.identifier ?? "USD"))
+            .foregroundColor(amountColor)
+        }
     }
 }
 
