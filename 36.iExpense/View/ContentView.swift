@@ -10,20 +10,26 @@ import SwiftUI
 
 struct ContentView: View {
     @Environment(\.modelContext) var modelContext
-    @Query private var expenses: Expenses
+    @Query private var expenses: [ExpenseItem]
     @State private var showingAddExpense = false
+    var personalItems: [ExpenseItem] {
+        expenses.filter{ $0.type == "Personal"}
+    }
+    var businessItems: [ExpenseItem] {
+        expenses.filter{ $0.type == "Business"}
+    }
     
     var body: some View {
         NavigationStack {
             List {
                 // Секция личных расходов
                 Section("Personal Expenses") {
-                    ForEach(expenses.personalItems) { item in
+                    ForEach(personalItems) { item in
                         ExpenseRow(item: item)
                     }
                     .onDelete { offsets in
                         for offset in offsets {
-                            let expenseItem = expenses.personalItems[offset]
+                            let expenseItem = expenses[offset]
                             modelContext.delete(expenseItem)
                         }
                     }
@@ -31,12 +37,12 @@ struct ContentView: View {
                 
                 // Секция деловых расходов
                 Section("Business Expenses") {
-                    ForEach(expenses.businessItems) { item in
+                    ForEach(businessItems) { item in
                         ExpenseRow(item: item)
                     }
                     .onDelete { offsets in
                         for offset in offsets {
-                            let expenseItem = expenses.businessItems[offset]
+                            let expenseItem = expenses[offset]
                             modelContext.delete(expenseItem)
                         }
                     }
@@ -49,7 +55,7 @@ struct ContentView: View {
                 }
             }
             .sheet(isPresented: $showingAddExpense) {
-                AddView(expenses: expenses)
+                AddView()
             }
         }
     }
@@ -84,6 +90,8 @@ struct ExpenseRow: View {
     let container = try! ModelContainer(for: Expenses.self, configurations: config)
     let context = container.mainContext
     let exampleExpenseItem = ExpenseItem(name: "Покупка б/у мака", type: "Personal", amount: 50000.0)
+    let exampleExpenseItem2 = ExpenseItem(name: "Аренда офиса за июль", type: "Business", amount: 40000.0)
+    context.insert(exampleExpenseItem2)
     context.insert(exampleExpenseItem)
     return ContentView()
         .modelContainer(container)
