@@ -5,53 +5,12 @@
 //  Created by Валентин on 07.06.2025.
 //
 
+import SwiftData
 import SwiftUI
 
-struct ExpenseItem: Identifiable, Codable {
-    var id = UUID()
-    let name: String
-    let type: String
-    let amount: Double
-}
-
-@Observable
-class Expenses {
-    var items = [ExpenseItem]() {
-        didSet {
-            saveItems()
-        }
-    }
-    
-    var personalItems: [ExpenseItem] {
-        items.filter { $0.type == "Personal" }
-    }
-    
-    var businessItems: [ExpenseItem] {
-        items.filter { $0.type == "Business" }
-    }
-    
-    init() {
-        loadItems()
-    }
-    
-    private func loadItems() {
-        if let savedItems = UserDefaults.standard.data(forKey: "Items"),
-           let decodedItems = try? JSONDecoder().decode([ExpenseItem].self, from: savedItems) {
-            items = decodedItems
-        } else {
-            items = []
-        }
-    }
-    
-    private func saveItems() {
-        if let encoded = try? JSONEncoder().encode(items) {
-            UserDefaults.standard.set(encoded, forKey: "Items")
-        }
-    }
-}
-
 struct ContentView: View {
-    @State private var expenses = Expenses()
+    @Environment(\.modelContext) var modelContext
+    @Query private var expenses: Expenses
     @State private var showingAddExpense = false
     
     var body: some View {
@@ -63,7 +22,10 @@ struct ContentView: View {
                         ExpenseRow(item: item)
                     }
                     .onDelete { offsets in
-                        removeItems(at: offsets, type: "Personal")
+                        for offset in offsets {
+                            let expenseItem = expenses.personalItems[offset]
+                            modelContext.delete(expenseItem)
+                        }
                     }
                 }
                 
@@ -73,7 +35,10 @@ struct ContentView: View {
                         ExpenseRow(item: item)
                     }
                     .onDelete { offsets in
-                        removeItems(at: offsets, type: "Business")
+                        for offset in offsets {
+                            let expenseItem = expenses.businessItems[offset]
+                            modelContext.delete(expenseItem)
+                        }
                     }
                 }
             }
@@ -87,12 +52,6 @@ struct ContentView: View {
                 AddView(expenses: expenses)
             }
         }
-    }
-    
-    func removeItems(at offsets: IndexSet, type: String) {
-        let itemsToDelete = type == "Personal" ? expenses.personalItems : expenses.businessItems
-        let idsToDelete = offsets.map { itemsToDelete[$0].id }
-        expenses.items.removeAll { idsToDelete.contains($0.id) }
     }
 }
 
@@ -114,12 +73,21 @@ struct ExpenseRow: View {
             
             Spacer()
             
-        Text(item.amount, format: .currency(code: Locale.current.currency?.identifier ?? "USD"))
+            Text(item.amount, format: .currency(code: Locale.current.currency?.identifier ?? "USD"))
             .foregroundColor(amountColor)
         }
     }
 }
-
+    
 #Preview {
-    ContentView()
+    do {
+        let config = ModelConfiguration(isStoredInMemoryOnly: true)
+        let container = try ModelContainer(for: Expenses.self, configurations: config)
+        let exampleExpenseItem = ExpenseItem(name: "Покупка б/у мака", type: "Personal", amount: 50,000.0)
+        let example = Expenses(items: [exampleExpenseItem])
+        ContentView(expenses: example)
+            .modelContainer(container)
+    } catch {
+        Text("Failed to create preview: \(error.LocalizedDescription)")
+    }
 }
