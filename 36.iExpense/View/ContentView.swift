@@ -12,12 +12,17 @@ struct ContentView: View {
     @Environment(\.modelContext) var modelContext
     @Query private var expenses: [ExpenseItem]
     @State private var showingAddExpense = false
-    var personalItems: [ExpenseItem] {
+    private var personalItems: [ExpenseItem] {
         expenses.filter{ $0.type == "Personal"}
     }
-    var businessItems: [ExpenseItem] {
+    private var businessItems: [ExpenseItem] {
         expenses.filter{ $0.type == "Business"}
     }
+    
+    @State private var sortOrder = [
+        SortDescriptor(\ExpenseItem.name),
+        SortDescriptor(\ExpenseItem.amount)
+    ]
     
     var body: some View {
         NavigationStack {
@@ -50,8 +55,27 @@ struct ContentView: View {
             }
             .navigationTitle("iExpense")
             .toolbar {
-                Button("Add Expense", systemImage: "plus") {
-                    showingAddExpense = true
+                ToolbarItem {
+                    Menu("Sort", systemImage: "arrow.up.arrow.down") {
+                        Picker("Sort", selection: $sortOrder) {
+                            Text("Sort By Name")
+                                .tag([
+                                    SortDescriptor(\ExpenseItem.name),
+                                    SortDescriptor(\ExpenseItem.amount)
+                                ])
+                            Text("Sort by Amount")
+                                .tag([
+                                    SortDescriptor(\ExpenseItem.amount),
+                                    SortDescriptor(\ExpenseItem.name)
+                                ])
+                        }
+                    }
+                }
+                
+                ToolbarItem {
+                    Button("Add Expense", systemImage: "plus") {
+                        showingAddExpense = true
+                    }
                 }
             }
             .sheet(isPresented: $showingAddExpense) {
@@ -87,12 +111,12 @@ struct ExpenseRow: View {
     
 #Preview {
     let config = ModelConfiguration(isStoredInMemoryOnly: true)
-    let container = try! ModelContainer(for: Expenses.self, configurations: config)
+    let container = try! ModelContainer(for: ExpenseItem.self, configurations: config)
     let context = container.mainContext
     let exampleExpenseItem = ExpenseItem(name: "Покупка б/у мака", type: "Personal", amount: 50000.0)
     let exampleExpenseItem2 = ExpenseItem(name: "Аренда офиса за июль", type: "Business", amount: 40000.0)
     context.insert(exampleExpenseItem2)
     context.insert(exampleExpenseItem)
-    return ContentView()
+    ContentView()
         .modelContainer(container)
 }
