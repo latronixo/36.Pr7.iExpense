@@ -12,14 +12,16 @@ struct ContentView: View {
     @Environment(\.modelContext) var modelContext
     @Query private var expenses: [ExpenseItem]
     @State private var showingAddExpense = false
-    private var personalItems: [ExpenseItem] {
-        expenses.filter{ $0.type == "Personal"}
+    private var filteredItems: [ExpenseItem] {
+        expenses.filter{ $0.type == filter}
                 .sorted(using: sortOrder)
     }
     private var businessItems: [ExpenseItem] {
         expenses.filter{ $0.type == "Business"}
                 .sorted(using: sortOrder)
     }
+    
+    @State private var filter = "Personal"
     
     @State private var sortOrder = [
         SortDescriptor(\ExpenseItem.name),
@@ -30,21 +32,8 @@ struct ContentView: View {
         NavigationStack {
             List {
                 // Секция личных расходов
-                Section("Personal Expenses") {
-                    ForEach(personalItems) { item in
-                        ExpenseRow(item: item)
-                    }
-                    .onDelete { offsets in
-                        for offset in offsets {
-                            let expenseItem = expenses[offset]
-                            modelContext.delete(expenseItem)
-                        }
-                    }
-                }
-                
-                // Секция деловых расходов
-                Section("Business Expenses") {
-                    ForEach(businessItems) { item in
+                Section("Expenses") {
+                    ForEach(filteredItems) { item in
                         ExpenseRow(item: item)
                     }
                     .onDelete { offsets in
@@ -58,23 +47,34 @@ struct ContentView: View {
             .navigationTitle("iExpense")
             .toolbar {
                 ToolbarItem {
-                    Menu("Sort", systemImage: "arrow.up.arrow.down") {
-                        Picker("Sort", selection: $sortOrder) {
-                            Text("Sort By Name")
-                                .tag([
-                                    SortDescriptor(\ExpenseItem.name),
-                                    SortDescriptor(\ExpenseItem.amount)
-                                ])
-                            Text("Sort by Amount")
-                                .tag([
-                                    SortDescriptor(\ExpenseItem.amount),
-                                    SortDescriptor(\ExpenseItem.name)
-                                ])
+                    Menu("Filter", systemImage: "arrow.up.arrow.down") {
+                        Picker("Filter", selection: $filter) {
+                            Text("Only Personal")
+                                .tag("Personal")
+                            Text("Only Business")
+                                .tag("Business")
                         }
                     }
                 }
                 
                 ToolbarItem {
+                Menu("Sort", systemImage: "arrow.up.arrow.down") {
+                    Picker("Sort", selection: $sortOrder) {
+                        Text("Sort By Name")
+                            .tag([
+                                SortDescriptor(\ExpenseItem.name),
+                                SortDescriptor(\ExpenseItem.amount)
+                            ])
+                        Text("Sort by Amount")
+                            .tag([
+                                SortDescriptor(\ExpenseItem.amount),
+                                SortDescriptor(\ExpenseItem.name)
+                            ])
+                    }
+                }
+            }
+            
+            ToolbarItem {
                     Button("Add Expense", systemImage: "plus") {
                         showingAddExpense = true
                     }
