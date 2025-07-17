@@ -80,14 +80,11 @@ struct ExpenseRow: View {
 }
     
 #Preview {
-    do {
-        let config = ModelConfiguration(isStoredInMemoryOnly: true)
-        let container = try ModelContainer(for: Expenses.self, configurations: config)
-        let exampleExpenseItem = ExpenseItem(name: "Покупка б/у мака", type: "Personal", amount: 50,000.0)
-        let example = Expenses(items: [exampleExpenseItem])
-        ContentView(expenses: example)
-            .modelContainer(container)
-    } catch {
-        Text("Failed to create preview: \(error.LocalizedDescription)")
-    }
+    let config = ModelConfiguration(isStoredInMemoryOnly: true)
+    let container = try! ModelContainer(for: Expenses.self, configurations: config)
+    let context = container.mainContext
+    let exampleExpenseItem = ExpenseItem(name: "Покупка б/у мака", type: "Personal", amount: 50000.0)
+    context.insert(exampleExpenseItem)
+    return ContentView()
+        .modelContainer(container)
 }

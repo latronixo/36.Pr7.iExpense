@@ -10,7 +10,7 @@ import SwiftData
 
 @Model
 class ExpenseItem {
-    var id = UUID()
+    var id: UUID
     var name: String
     var type: String
     var amount: Double
