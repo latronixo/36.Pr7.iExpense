@@ -14,9 +14,11 @@ struct ContentView: View {
     @State private var showingAddExpense = false
     private var personalItems: [ExpenseItem] {
         expenses.filter{ $0.type == "Personal"}
+                .sorted(using: sortOrder)
     }
     private var businessItems: [ExpenseItem] {
         expenses.filter{ $0.type == "Business"}
+                .sorted(using: sortOrder)
     }
     
     @State private var sortOrder = [
@@ -117,6 +119,6 @@ struct ExpenseRow: View {
     let exampleExpenseItem2 = ExpenseItem(name: "Аренда офиса за июль", type: "Business", amount: 40000.0)
     context.insert(exampleExpenseItem2)
     context.insert(exampleExpenseItem)
-    ContentView()
+    return ContentView()
         .modelContainer(container)
 }
