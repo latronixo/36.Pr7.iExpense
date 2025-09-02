@@ -35,6 +35,9 @@ struct ContentView: View {
                 Section("Expenses") {
                     ForEach(filteredItems) { item in
                         ExpenseRow(item: item)
+                            .accessibilityElement(children: .ignore)
+                            .accessibilityValue("\(item.name) \(item.amount)")
+                            .accessibilityValue(filter)
                     }
                     .onDelete { offsets in
                         for offset in offsets {
