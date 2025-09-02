@@ -12,7 +12,7 @@ struct AddView: View {
     @Environment(\.modelContext) var modelContext   
     @Environment(\.dismiss) var dismiss
     
-    @State private var name = ""
+    @State private var name = "new expense"
     @State private var type = "Personal"
     @State private var amount = 0.0
     
@@ -21,8 +21,6 @@ struct AddView: View {
     var body: some View {
         NavigationStack {
             Form {
-                TextField("Name", text: $name)
-                
                 Picker("Type", selection: $type) {
                     ForEach(types, id: \.self) {
                         Text($0)
@@ -32,14 +30,23 @@ struct AddView: View {
                 TextField("Amount", value: $amount, format: .currency(code: Locale.current.currency?.identifier ?? "RUB"))
                     .keyboardType(.decimalPad)
             }
-            .navigationTitle("Add new expense")
+            .navigationTitle($name)
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                Button("Save") {
-                    let item = ExpenseItem(name: name, type: type, amount: amount)
-                    modelContext.insert(item)
-                    dismiss()
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Cancel") {
+                        dismiss()
+                    }
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Save") {
+                        let item = ExpenseItem(name: name, type: type, amount: amount)
+                        modelContext.insert(item)
+                        dismiss()
+                    }
                 }
             }
+            .navigationBarBackButtonHidden()
         }
     }
 }

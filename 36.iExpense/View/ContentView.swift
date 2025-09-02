@@ -11,7 +11,7 @@ import SwiftUI
 struct ContentView: View {
     @Environment(\.modelContext) var modelContext
     @Query private var expenses: [ExpenseItem]
-    @State private var showingAddExpense = false
+    
     private var filteredItems: [ExpenseItem] {
         expenses.filter{ $0.type == filter}
                 .sorted(using: sortOrder)
@@ -75,13 +75,10 @@ struct ContentView: View {
             }
             
             ToolbarItem {
-                    Button("Add Expense", systemImage: "plus") {
-                        showingAddExpense = true
-                    }
+                NavigationLink(destination: AddView()) {
+                    Label("Add Expense", systemImage: "plus")
                 }
             }
-            .sheet(isPresented: $showingAddExpense) {
-                AddView()
             }
         }
     }
